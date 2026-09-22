@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://www.conceptcareagency.co.uk/sitemap.xml
