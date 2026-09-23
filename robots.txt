@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.conceptcareagency.co.uk/sitemap.xml
+Sitemap: https://www.concepthealthcareagency.co.uk/sitemap.xml
