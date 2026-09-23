@@ -1,0 +1,4 @@
+# Netlify: serve the styled 404 page (with a real 404 status) for any unmatched path.
+# Netlify Pages/Cloudflare Pages auto-detect 404.html without this file, but it's
+# explicit here in case the host needs it stated. Not used by other hosts.
+/*  /404.html  404

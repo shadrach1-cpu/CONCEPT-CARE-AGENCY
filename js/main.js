@@ -34,6 +34,51 @@
     onScroll();
   }
 
+  // Dark mode toggle. With no saved choice, CSS alone follows the OS setting;
+  // this only takes over once the visitor picks explicitly, and remembers it.
+  var themeBtn = document.getElementById("theme-toggle");
+  if (themeBtn) {
+    var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
+    function activeTheme() {
+      var saved = document.documentElement.getAttribute("data-theme");
+      return saved || (prefersDark && prefersDark.matches ? "dark" : "light");
+    }
+    function syncThemeButton() {
+      var dark = activeTheme() === "dark";
+      themeBtn.setAttribute("aria-pressed", String(dark));
+      themeBtn.setAttribute("aria-label", "Switch to " + (dark ? "light" : "dark") + " mode");
+    }
+    syncThemeButton();
+    themeBtn.addEventListener("click", function () {
+      var next = activeTheme() === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      try { localStorage.setItem("cca-theme", next); } catch (e) {}
+      syncThemeButton();
+    });
+  }
+
+  // Scroll progress bar + back-to-top button
+  var progressBar = document.getElementById("scroll-progress");
+  var backToTop = document.getElementById("back-to-top");
+  if (progressBar || backToTop) {
+    var onScrollTrack = function () {
+      var doc = document.documentElement;
+      var scrollTop = doc.scrollTop || document.body.scrollTop;
+      var trackable = doc.scrollHeight - doc.clientHeight;
+      if (progressBar) progressBar.style.width = (trackable > 0 ? (scrollTop / trackable) * 100 : 0) + "%";
+      if (backToTop) backToTop.classList.toggle("show", scrollTop > 600);
+    };
+    window.addEventListener("scroll", onScrollTrack, { passive: true });
+    window.addEventListener("resize", onScrollTrack);
+    onScrollTrack();
+  }
+  if (backToTop) {
+    backToTop.addEventListener("click", function () {
+      var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+    });
+  }
+
   // Scroll reveal
   var reveals = document.querySelectorAll(".reveal");
   if ("IntersectionObserver" in window && reveals.length) {
@@ -79,6 +124,69 @@
     var match = tabs.filter(function (t) { return t.getAttribute("aria-controls") === hash; })[0];
     if (match) select(match);
   });
+
+  // "Find the right service" wizard (homepage)
+  var finder = document.querySelector("[data-finder]");
+  if (finder) {
+    var finderOptions = Array.prototype.slice.call(finder.querySelectorAll(".finder-option"));
+    var finderResult = finder.querySelector(".finder-result");
+    var finderIcon = finderResult && finderResult.querySelector(".badge .icon");
+    var finderTitle = finderResult && finderResult.querySelector("h3");
+    var finderText = finderResult && finderResult.querySelector("p");
+    var finderCta = finderResult && finderResult.querySelector("a.btn");
+    var finderData = {
+      hospital: { icon: "i-hand", title: "Hospitals", text: "We supply Healthcare Assistants trained to support wards and clinical teams with patients' daily needs.", service: "Hospital", ctaText: "Request a Healthcare Assistant", href: "request-staff.html" },
+      carehome: { icon: "i-home", title: "Care Homes", text: "Care Assistants and Senior Carers giving personal care, medication support and companionship.", service: "Residential care home", ctaText: "Request a Care Assistant", href: "request-staff.html" },
+      disability: { icon: "i-heart", title: "Disability", text: "Support Workers helping adults with learning disabilities and complex care needs to live independently.", service: "Disability / supported living", ctaText: "Request a Support Worker", href: "request-staff.html" },
+      support: { icon: "i-users", title: "Support Caregiving", text: "General support care staff for daily living, companionship and community support.", service: "Support caregiving / community", ctaText: "Request a support caregiver", href: "request-staff.html" },
+      caregiver: { icon: "i-star", title: "Looking for care work?", text: "Join our pool of caregivers and choose flexible shifts across Norwich and Norfolk.", ctaText: "Register your interest", href: "careers.html#apply" }
+    };
+    finderOptions.forEach(function (opt) {
+      opt.addEventListener("click", function () {
+        finderOptions.forEach(function (o) { o.setAttribute("aria-pressed", "false"); });
+        opt.setAttribute("aria-pressed", "true");
+        var d = finderData[opt.getAttribute("data-key")];
+        if (!d || !finderResult) return;
+        if (finderIcon) finderIcon.className = "icon " + d.icon;
+        if (finderTitle) finderTitle.textContent = d.title;
+        if (finderText) finderText.textContent = d.text;
+        if (finderCta) {
+          finderCta.href = d.service ? d.href + "?service=" + encodeURIComponent(d.service) : d.href;
+          finderCta.textContent = d.ctaText;
+        }
+        finderResult.classList.add("show");
+      });
+    });
+  }
+
+  // Live FAQ search (Services page)
+  var faqInput = document.getElementById("faq-search");
+  if (faqInput) {
+    var faqTarget = document.querySelector(faqInput.getAttribute("data-target"));
+    var faqEmpty = document.getElementById("faq-empty");
+    var faqItems = faqTarget ? Array.prototype.slice.call(faqTarget.querySelectorAll("details")) : [];
+    faqInput.addEventListener("input", function () {
+      var q = faqInput.value.trim().toLowerCase();
+      var shown = 0;
+      faqItems.forEach(function (d) {
+        var match = !q || d.textContent.toLowerCase().indexOf(q) !== -1;
+        d.hidden = !match;
+        if (match) shown++;
+      });
+      if (faqEmpty) faqEmpty.classList.toggle("show", q !== "" && shown === 0);
+    });
+  }
+
+  // Pre-select the "Type of service" dropdown when arriving via a ?service= link
+  // (e.g. the homepage service finder)
+  var typeSelect = document.getElementById("type");
+  if (typeSelect && window.location.search) {
+    var wantedService = new URLSearchParams(window.location.search).get("service");
+    if (wantedService) {
+      var wantedOpt = Array.prototype.slice.call(typeSelect.options).filter(function (o) { return o.value === wantedService; })[0];
+      if (wantedOpt) typeSelect.value = wantedOpt.value;
+    }
+  }
 
   // Forms
   function labelFor(el, form) {

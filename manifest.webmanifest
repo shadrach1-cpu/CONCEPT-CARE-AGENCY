@@ -1,0 +1,13 @@
+{
+  "name": "Concept Care Agency",
+  "short_name": "Concept Care",
+  "description": "Care staffing agency for hospitals, care homes, disability services and support caregiving in Norwich and Norfolk.",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#ffffff",
+  "theme_color": "#0a3a3f",
+  "lang": "en-GB",
+  "icons": [
+    { "src": "assets/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
